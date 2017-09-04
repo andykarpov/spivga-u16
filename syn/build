@@ -1,0 +1,114 @@
+#!/usr/bin/env php
+<?php
+
+define('SYN_PATH', dirname(__FILE__) . '/');
+define('ROM_PATH', realpath(SYN_PATH . '../rom/') . '/');
+define('BINTOHEX', SYN_PATH . 'bin2hex --binaries=0,');
+
+$cwd = getcwd();
+
+$BUILD = date('Ymd');
+$PROJECT = ($argc && $argc > 1) ? $argv[1] : 'ZXULAPLUS';
+$BOARDFILE = ($argc && $argc > 2) ? $argv[2] : 'revX';
+$PART = ($argc && $argc > 3) ? $argv[3] : 'EP4CEXXEXX';
+$FLASH_LOADER = ($argc && $argc > 4) ? $argv[4] : 'EP4CEXX';
+$FLASH_CONFIG = ($argc && $argc > 5) ? $argv[5] : 'EPCSXX';
+
+function int2hexbytes($value) {
+	$a = unpack("C*", pack("L", $value));
+	$a = array_map(function($item) {
+		return '#' . strtoupper(str_pad(dechex($item), 2, '0', STR_PAD_LEFT));
+	}, $a);
+	return $a[3] . ',' . $a[2] . ',' . $a[1];
+}
+
+function tpl($tpl, $values) {
+	foreach($values as $key => $value) {
+		$tpl = str_replace('[' . $key . ']', $value, $tpl);
+	}
+	return $tpl;
+}
+
+$hex_block_tpl = <<<EOT
+	<hex_block>
+		<hex_filename>[FILE]</hex_filename>
+		<hex_addressing>relative</hex_addressing>
+		<hex_offset>[OFFSET]</hex_offset>
+	</hex_block>
+EOT;
+
+$cof_tpl = <<<EOT
+<?xml version="1.0" encoding="US-ASCII" standalone="yes"?>
+<cof>
+	<eprom_name>[FLASH_CONFIG]</eprom_name>
+	<flash_loader_device>[FLASH_LOADER]</flash_loader_device>
+	<output_filename>[PROJECT]_[BOARDFILE].jic</output_filename>
+	<n_pages>1</n_pages>
+	<width>1</width>
+	<mode>7</mode>
+	[HEX_BLOCKS]
+	<sof_data>
+		<start_address>00000000</start_address>
+		<user_name>Page_0</user_name>
+		<page_flags>1</page_flags>
+		<bit0>
+			<sof_filename>[PROJECT]_[BOARDFILE].sof</sof_filename>
+		</bit0>
+	</sof_data>
+	<version>9</version>
+	<create_cvp_file>0</create_cvp_file>
+	<auto_create_rpd>0</auto_create_rpd>
+	<create_hps_iocsr>0</create_hps_iocsr>
+	<create_fif_file>0</create_fif_file>
+	<options>
+		<map_file>1</map_file>
+	</options>
+	<advanced_options>
+		<ignore_epcs_id_check>0</ignore_epcs_id_check>
+		<ignore_condone_check>2</ignore_condone_check>
+		<plc_adjustment>0</plc_adjustment>
+		<post_chain_bitstream_pad_bytes>-1</post_chain_bitstream_pad_bytes>
+		<post_device_bitstream_pad_bytes>-1</post_device_bitstream_pad_bytes>
+		<bitslice_pre_padding>1</bitslice_pre_padding>
+	</advanced_options>
+</cof>
+
+EOT;
+
+$cdf_tpl = <<<EOT
+JedecChain;
+        FileRevision(JESD32A);
+        DefaultMfr(6E);
+
+        P ActionCode(Cfg)
+                Device PartName([FLASH_LOADER]) Path("[PWD]/") File("[PROJECT]_[BOARDFILE].jic") MfrSpec(OpMask(1) SEC_Device([FLASH_CONFIG]) Child_OpMask(1 1));
+
+ChainEnd;
+
+AlteraBegin;
+        ChainType(JTAG);
+AlteraEnd;
+EOT;
+
+$cof = tpl($cof_tpl, [
+	'FLASH_CONFIG' => $FLASH_CONFIG, 
+	'FLASH_LOADER' => $FLASH_LOADER, 
+	'PROJECT' => $PROJECT, 
+	'BOARDFILE' => $BOARDFILE,
+	'HEX_BLOCKS' => '',
+]);
+
+$cdf = tpl($cdf_tpl, [
+	'FLASH_CONFIG' => $FLASH_CONFIG, 
+	'FLASH_LOADER' => $FLASH_LOADER, 
+	'PROJECT' => $PROJECT, 
+	'BOARDFILE' => $BOARDFILE,
+	'PWD' => SYN_PATH
+]);
+
+file_put_contents(SYN_PATH . $PROJECT . '_' . $BOARDFILE . '.cof', $cof);
+file_put_contents(SYN_PATH . $PROJECT . '_' . $BOARDFILE . '.cdf', $cdf);
+
+chdir(ROM_PATH);
+
+chdir($cwd);
