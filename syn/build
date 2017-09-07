@@ -110,5 +110,11 @@ file_put_contents(SYN_PATH . $PROJECT . '_' . $BOARDFILE . '.cof', $cof);
 file_put_contents(SYN_PATH . $PROJECT . '_' . $BOARDFILE . '.cdf', $cdf);
 
 chdir(ROM_PATH);
+$roms = ['test.rom'];
+foreach ($roms as $rom) {
+	if (file_exists(ROM_PATH . $rom)) {
+		exec(BINTOHEX . escapeshellarg($rom));
+	}
+}
 
 chdir($cwd);

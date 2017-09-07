@@ -1,136 +1,81 @@
+-------------------------------------------------------------------[11.01.2017]
+-- Sync
+-------------------------------------------------------------------------------
+-- Engineer: MVV <mvvproject@gmail.com>
+
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
+use ieee.std_logic_unsigned.all;
+use IEEE.STD_LOGIC_ARITH.all;
 
-entity vga_sync is
-    port(
-        clock: in std_logic;
-        reset: in std_logic;
-        hsync: out std_logic;
-        vsync: out std_logic;
-        video_on: out std_logic;
-        pixel_tick: out std_logic;
-        pixel_x: out std_logic_vector(9 downto 0);
-        pixel_y: out std_logic_vector(9 downto 0)        
-    );
-end vga_sync;
+entity vga_sync is port (
+    I_CLK       : in std_logic;             -- VGA dot clock
+    I_RESET     : in std_logic;
+    I_EN        : in std_logic;
+    O_HCNT      : out std_logic_vector(9 downto 0);
+    O_VCNT      : out std_logic_vector(9 downto 0);
+    O_FLASH     : out std_logic;            -- частота мерцания курсора
+    O_BLANK     : out std_logic;
+    O_HSYNC     : out std_logic;            -- horizontal (line) sync
+    O_VSYNC     : out std_logic);           -- vertical (frame) sync
+end entity;
 
-architecture arch of vga_sync is
-    -- VGA 640x480
+architecture rtl of vga_sync is
+
+-- ModeLine "640x480@60Hz"  25,175 640 656 752 800 480 490 492 525 -HSync -VSync
+    -- Horizontal Timing constants  
+    constant h_pixels_across    : integer := 640 - 1;
+    constant h_sync_on      : integer := 656 - 1;
+    constant h_sync_off     : integer := 752 - 1;
+    constant h_end_count        : integer := 800 - 1;
+    -- Vertical Timing constants
+    constant v_pixels_down      : integer := 480 - 1;
+    constant v_sync_on      : integer := 490 - 1;
+    constant v_sync_off     : integer := 492 - 1;
+    constant v_end_count        : integer := 525 - 1;
+
+    signal h            : std_logic_vector(9 downto 0) := "0000000000";     -- horizontal pixel counter
+    signal hcnt         : std_logic_vector(9 downto 0) := "0000000000";     -- horizontal pixel counter
+    signal vcnt         : std_logic_vector(9 downto 0) := "0000000000";     -- vertical line counter
+    signal hsync            : std_logic;
+    signal vsync            : std_logic;
+    signal blank            : std_logic;
+    signal counter          : std_logic_vector(23 downto 0);
     
-    -- horizontal timings, in pixels
-    constant h_display_area: integer := 640;
-    constant h_front_porch: integer := 16;
-    constant h_sync: integer := 96;
-    constant h_back_porch: integer := 48;
-    
-    -- vertical timings, in lines
-    constant v_display_area: integer := 480;
-    constant v_front_porch: integer := 10;
-    constant v_sync: integer := 2;
-    constant v_back_porch: integer := 33;
-    
-    -- derived horizontal constants
-    constant hsync_start: integer := h_display_area + h_front_porch;
-    constant hsync_end: integer := hsync_start + h_sync;
-    constant end_of_line: integer := hsync_end + h_back_porch - 1;
-    
-    -- derived vertical constants
-    constant vsync_start: integer := v_display_area + v_front_porch;
-    constant vsync_end: integer := vsync_start + v_sync;
-    constant end_of_frame: integer := vsync_start + v_back_porch - 1;
-    
-    -- mod-2 counter
-    signal mod2_reg, mod2_next: std_logic;
-    
-    -- sync counters
-    signal v_count_reg, v_count_next: unsigned(9 downto 0);
-    signal h_count_reg, h_count_next: unsigned(9 downto 0);
-    
-    -- output buffer
-    signal v_sync_reg, h_sync_reg: std_logic;
-    signal v_sync_next, h_sync_next: std_logic;
-    
-    -- status signals
-    signal h_end, v_end, p_tick: std_logic;
 begin
-    -- registers
-    process(clock, reset)
-    begin
-        if reset = '1' then
-            mod2_reg <= '0';
-            v_count_reg <= (others => '0');
-            h_count_reg <= (others => '0');
-            v_sync_reg <= '0';
-            h_sync_reg <= '0';
-        elsif clock'event and clock = '1' then
-            mod2_reg <= mod2_next;
-            v_count_reg <= v_count_next;
-            h_count_reg <= h_count_next;
-            v_sync_reg <= v_sync_next;
-            h_sync_reg <= h_sync_next;
-        end if;
-    end process;
-    
-    -- mod-2 circuit to generate 25.125MHz enable tick
-    mod2_next <= not mod2_reg;
-    
-    -- 25.125MHz pixel tick
-    p_tick <= '1' when mod2_reg = '1' else '0';
-    
-    -- status
-    h_end <=
-        '1' when h_count_reg = end_of_line else
-        '0';
-    v_end <=
-        '1' when v_count_reg = end_of_frame else
-        '0';
-    
-    -- mod-800 horizontal sync counter
-    process(h_count_reg, h_end, p_tick)
-    begin
-        if p_tick = '1' then
-            if h_end = '1' then
-                h_count_next <= (others => '0');
-            else
-                h_count_next <= h_count_reg + 1;
-            end if;
-        else
-            h_count_next <= h_count_reg;
-        end if;
-    end process;
-    
-    -- mod-525 vertical sync counter
-    process(v_count_reg, h_end, v_end, p_tick)
-    begin
-        if p_tick = '1' and h_end = '1' then
-            if v_end = '1' then
-                v_count_next <= (others => '0');
-            else
-                v_count_next <= v_count_reg + 1;
-            end if;
-        else
-            v_count_next <= v_count_reg;
-        end if;
-    end process;
-    
-    -- hsync and vsync, buffered to avoid glitch
-    h_sync_next <=
-        '1' when hsync_start <= h_count_reg and h_count_reg < hsync_end else
-        '0';
-    v_sync_next <=
-        '1' when vsync_start <= v_count_reg and v_count_reg < vsync_end else
-        '0';
         
-    -- video on/off
-    video_on <=
-        '1' when h_count_reg < h_display_area and v_count_reg < v_display_area else
-        '0';
-        
-    -- output signals
-    hsync <= h_sync_reg;
-    vsync <= v_sync_reg;
-    pixel_x <= std_logic_vector(h_count_reg);
-    pixel_y <= std_logic_vector(v_count_reg);
-    pixel_tick <= p_tick;
-end arch;
+    process (I_CLK, I_RESET, I_EN, hcnt, vcnt)
+    begin
+        if rising_edge(I_CLK) then
+            if I_RESET = '1' then
+                hcnt <= (others => '0');
+                vcnt <= (others => '0');
+                counter <= (others => '0');
+            elsif I_EN = '1' then
+                if hcnt = h_end_count then
+                    hcnt <= (others => '0');
+                    if vcnt = v_end_count then
+                        vcnt <= (others => '0');
+                    else
+                        vcnt <= vcnt + 1;
+                    end if;
+                else 
+                    hcnt <= hcnt + 1;
+                end if;                
+                counter <= counter + 1;
+            end if;
+        end if;
+    end process;
+
+    hsync   <= '1' when (hcnt <= h_sync_on) or (hcnt > h_sync_off) else '0';
+    vsync   <= '1' when (vcnt <= v_sync_on) or (vcnt > v_sync_off) else '0';
+    blank   <= '1' when (hcnt > h_pixels_across) or (vcnt > v_pixels_down) else '0';
+
+    O_HCNT  <= hcnt;
+    O_VCNT  <= vcnt;
+    O_FLASH <= counter(23);
+    O_HSYNC <= hsync;
+    O_BLANK <= blank;
+    O_VSYNC <= vsync;
+
+end architecture;

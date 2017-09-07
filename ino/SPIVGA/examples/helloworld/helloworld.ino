@@ -9,10 +9,10 @@ void setup()
 {
     SPI.begin();
     vga.begin();
-    vga.setPos(0,0);
     vga.setColor(0xFF);
     vga.setBackground(0x00);
-    vga.write("Hello world!");
+    vga.setPos(0,0);
+    vga.print(F("Hello world!"));
 }
 
 void loop()
@@ -20,11 +20,13 @@ void loop()
     vga.noop();
     report = vga.getReport();
     if (report.key1 != 0xFF) {
+        vga.setColor(B0101);
         vga.setPos(0,10);
-        vga.write("Key pressed");
+        vga.print(F("Key pressed"));
     } else {
+        vga.setColor(B1001);
         vga.setPos(0,10);
-        vga.write("Key up     ");
+        vga.print(F("Key up     "));
     }
     delay(100);
 }

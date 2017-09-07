@@ -21,6 +21,7 @@
 // Library headers
 // Project headers
 #include "keyboard_report.h"
+#include <avr/pgmspace.h>
 
 /****************************************************************************/
 
@@ -32,7 +33,7 @@
 class SPIVGA : public Print
 {
 private:
-  uint8_t cs_pin; /**< Pin where CS line is connected */
+  uint8_t cs_pin;
   uint8_t fg_color;
   uint8_t bg_color;
   KeyboardReport report;
@@ -51,14 +52,13 @@ protected:
 
   void setReport(KeyboardReport _report);
 
-
   void write_command(uint8_t _cmd, uint8_t _value1, uint8_t _value2);
 
 public:
   /**
    * Constructor
    *
-   * Only sets pin values.  Doesn't do touch the chip.  Be sure to call begin()!
+   * Only sets pin values.  Be sure to call begin()!
    */
   SPIVGA( uint8_t _cs_pin);
 
@@ -98,18 +98,39 @@ public:
    */
   void clear(void);
 
+  /**
+   * Empty command, just to update keyboard report
+   *
+   */
   void noop(void);
 
+  /**
+   * Get last keyboard report
+   * 
+   */
   KeyboardReport getReport(void);
 
   /**
-   * Write characted
+   * Write a single characted
    *
    * @param chr character byte.
    */
   virtual size_t write(uint8_t chr);
 
+  /**
+   * Write a string
+   *
+   * @param *str string.
+   */
   virtual size_t write(const char *str);
+
+  /**
+   * Write a buffer of the given size
+   *
+   * @param *buffer
+   * @param size
+   */
+  virtual size_t write(const uint8_t *buffer, size_t size);
 
 };
 

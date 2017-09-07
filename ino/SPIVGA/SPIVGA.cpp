@@ -16,10 +16,10 @@
 // This component's header
 #include <SPIVGA.h>
 
-#undef PROGMEM
-#define PROGMEM __attribute__ ((section (".progmem.data"))) 
-#undef PSTR 
-#define PSTR(s) (__extension__({static char __c[] PROGMEM = (s); &__c[0];}))
+//#undef PROGMEM
+//#define PROGMEM __attribute__ ((section (".progmem.data"))) 
+//#undef PSTR 
+// /#define PSTR(s) (__extension__({static char __c[] PROGMEM = (s); &__c[0];}))
 
 /****************************************************************************/
 
@@ -89,6 +89,8 @@ size_t SPIVGA::write(uint8_t chr)
   return 1; 
 }
 
+/****************************************************************************/
+
 size_t SPIVGA::write(const char *str)
 {
   size_t n = 0;
@@ -102,25 +104,48 @@ size_t SPIVGA::write(const char *str)
   return n;
 }
 
+/****************************************************************************/
+
+size_t SPIVGA::write(const uint8_t *buffer, size_t size) 
+{
+  uint8_t color = fg_color << 4;
+  while (size > 0) {
+    char c = *buffer;
+    write_command(CMD_CHAR, (uint8_t)c, bg_color + color); 
+    size--;
+  }
+  return size;
+}
+
+/****************************************************************************/
+
 void SPIVGA::setColor(uint8_t color)
 {
     fg_color = color;
 }
+
+/****************************************************************************/
 
 void SPIVGA::setBackground(uint8_t color)
 {
     bg_color = color;
 }
 
+/****************************************************************************/
+
 void SPIVGA::setReport(KeyboardReport _report)
 {
    report = _report;
 }
 
+/****************************************************************************/
+
 KeyboardReport SPIVGA::getReport(void)
 {
   return report;
 }
+
+/****************************************************************************/
 
 void SPIVGA::noop(void)
 {

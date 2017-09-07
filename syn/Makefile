@@ -19,8 +19,7 @@ BOARDFILE = revC
 ###################################################################
 # Sources
 
-SRCS = ../rtl/font/font_rom.vhd \
-       ../rtl/hdmi/altddio_out1.vhd \
+SRCS = ../rtl/hdmi/altddio_out1.vhd \
        ../rtl/hdmi/hdmi.vhd \
        ../rtl/hdmi/encoder.vhd \
        ../rtl/hdmi/hdmidataencoder.v \
@@ -28,7 +27,8 @@ SRCS = ../rtl/font/font_rom.vhd \
        ../rtl/hid/deserializer.vhd \
        ../rtl/pll/altpll0.vhd \
        ../rtl/spi/spi_slave.vhd \
-       ../rtl/ram/ram.vhd \
+       ../rtl/ram/screen2.v \
+       ../rtl/font/rom_font.v \
        ../rtl/vga/vga_sync.vhd \
        ../rtl/spivga.vhd \
 
