@@ -93,7 +93,7 @@ architecture rtl of spivga is
     signal pixel_y: std_logic_vector(9 downto 0) := "0000000000";
 
     signal char: std_logic_vector(7 downto 0);
-    signal attr: std_logic_vector(7 downto 0);
+    signal attr, last_attr, cur_attr: std_logic_vector(7 downto 0);
 
     signal char_x: std_logic_vector(2 downto 0);
     signal char_y: std_logic_vector(3 downto 0);
@@ -145,9 +145,7 @@ architecture rtl of spivga is
     signal tone_note : std_logic_vector(7 downto 0);
     signal tone_len : std_logic_vector(7 downto 0);
 
-    signal state : std_logic_vector(2 downto 0) := "000";    
-
-    signal test : std_logic := '0';
+    signal font_reg : std_logic_vector(7 downto 0);
 
 begin
 
@@ -162,7 +160,6 @@ begin
             c3          => open,        --  84.00 MHz
             c4          => clk_spi);    --   8.00 MHz
 
-
     U_SYNC: entity work.vga_sync
         port map (
             I_CLK       => clk_vga,
@@ -175,29 +172,6 @@ begin
             O_HSYNC     => hsync,
             O_VSYNC     => vsync
         ); 
-
-
-    --U_FONT: entity work.font_rom
-    --    port map(
-    --        clock       => clk_vga,
-    --        addr        => rom_addr,
-    --        data        => font_word
-    --    );
-
-    --U_VRAM: entity work.ram
-    --    port map (
-    --        address_a   => addr_write,
-    --        clock_a     => clk_spi,
-    --        data_a      => vram_di,
-    --        wren_a      => vram_wr,
-    --        q_a         => open,
-
-    --        address_b   => addr_read,
-    --        clock_b     => clk_vga,
-    --        data_b      => (others => '0'),
-    --        wren_b      => '0',
-    --        q_b         => vram_do
-    --    );
 
     U_FONT: rom_font
     port map (
@@ -298,40 +272,34 @@ begin
     char_x <= pixel_x(2 downto 0);
     char_y <= pixel_y(3 downto 0);
 
-    -- read memory and font data
-    process(clk_vga, pixel_x)
+    addr_read <= (pixel_y(8 downto 4) & pixel_x(9 downto 3));
+    char <= vram_do(15 downto 8); 
+    cur_attr <= vram_do(7 downto 0); 
+    rom_addr <= char & char_y;
+    font_reg <= font_word;
+
+    process(clk_vga, bit_addr)
     begin
         if rising_edge(clk_vga) then
-            case pixel_x(2 downto 0) is
-                -- read video memory
-                when "000" => addr_read <= pixel_y(8 downto 4) & pixel_x(9 downto 3);
-                -- reading font glyph
-                when "001" => 
-                        char <= vram_do(15 downto 8); 
-                        attr <= vram_do(7 downto 0); 
-                        rom_addr <= char & char_y;
-                when others => null;
-            end case;
+            if (bit_addr = "010") then
+                last_attr <= cur_attr;
+            end if;
         end if;
     end process;
 
-    -- getting font pixel (with delay of 2 cycles)
+    attr <= last_attr when bit_addr <= 2 else cur_attr;
+
+    -- getting font pixel of the current char line
     bit_addr <= char_x(2 downto 0);
-    process (clk_vga)
-    begin
-        if rising_edge(clk_vga) then
-            case bit_addr is 
-                when "000" => font_bit <= font_word(2);
-                when "001" => font_bit <= font_word(1);
-                when "010" => font_bit <= font_word(0);
-                when "011" => font_bit <= font_word(7);
-                when "100" => font_bit <= font_word(6);
-                when "101" => font_bit <= font_word(5);
-                when "110" => font_bit <= font_word(4);
-                when "111" => font_bit <= font_word(3);
-            end case;
-        end if;
-    end process;
+    font_bit <= font_reg(2) when bit_addr = "000" else 
+                font_reg(1) when bit_addr = "001" else 
+                font_reg(0) when bit_addr = "010" else 
+                font_reg(7) when bit_addr = "011" else 
+                font_reg(6) when bit_addr = "100" else 
+                font_reg(5) when bit_addr = "101" else 
+                font_reg(4) when bit_addr = "110" else 
+                font_reg(3) when bit_addr = "111";
+
 
     -- rgb multiplexing
     is_flash <= '1' when attr(3 downto 0) = "0001" else '0';
@@ -350,29 +318,6 @@ begin
     --0x01 = CMD_CLEAR - 0 - 0
     --0x02 = CMD_SET_POS - X - Y (0...79, 0...29)
     --0x04 = CMD_CHAR - CHAR - ATTRS    
-
-    -- test
-    --process(reset, clk_spi)
-    --begin
-    --    if rising_edge(clk_spi) then
-    --        if (reset = '1') then
-    --            vram_wr <= '0';
-    --            addr_write <= (others => '0');
-    --        elsif addr_write < 4095 then
-    --            vram_wr <= '1';
-    --            case addr_write is
-    --                when "000000000000" => vram_di <= X"48F2";
-    --                when "000000000001" => vram_di <= X"45F2";
-    --                when "000000000010" => vram_di <= X"4CF2";
-    --                when "000000000011" => vram_di <= X"4CF2";
-    --                when others => vram_di <= X"2DF0";
-    --            end case;
-    --            addr_write <= addr_write + 1;
-    --        else 
-    --            vram_wr <= '0';
-    --        end if;
-    --    end if;
-    --end process;
 
     --process(reset, clk_spi, spi_do_valid, spi_do, addr_write, addr_clear, clear)
     --begin

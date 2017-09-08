@@ -33,6 +33,7 @@ architecture rtl of vga_sync is
     constant v_sync_on      : integer := 490 - 1;
     constant v_sync_off     : integer := 492 - 1;
     constant v_end_count        : integer := 525 - 1;
+    constant h_offset : integer := 2;
 
     signal h            : std_logic_vector(9 downto 0) := "0000000000";     -- horizontal pixel counter
     signal hcnt         : std_logic_vector(9 downto 0) := "0000000000";     -- horizontal pixel counter
@@ -41,6 +42,8 @@ architecture rtl of vga_sync is
     signal vsync            : std_logic;
     signal blank            : std_logic;
     signal counter          : std_logic_vector(23 downto 0);
+    signal next_hend      : std_logic := '0';
+    signal next_vend      : std_logic := '0';
     
 begin
         
@@ -52,8 +55,10 @@ begin
                 vcnt <= (others => '0');
                 counter <= (others => '0');
             elsif I_EN = '1' then
+                
                 if hcnt = h_end_count then
                     hcnt <= (others => '0');
+
                     if vcnt = v_end_count then
                         vcnt <= (others => '0');
                     else
@@ -69,7 +74,7 @@ begin
 
     hsync   <= '1' when (hcnt <= h_sync_on) or (hcnt > h_sync_off) else '0';
     vsync   <= '1' when (vcnt <= v_sync_on) or (vcnt > v_sync_off) else '0';
-    blank   <= '1' when (hcnt > h_pixels_across) or (vcnt > v_pixels_down) else '0';
+    blank   <= '1' when (hcnt <= h_offset or hcnt > h_pixels_across + h_offset) or (vcnt > v_pixels_down) else '0';
 
     O_HCNT  <= hcnt;
     O_VCNT  <= vcnt;
