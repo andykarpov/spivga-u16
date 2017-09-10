@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+<head> 
+    <script src="font.js"></script>
+    <script src="classes.js"></script>
+</head>
+<body>
+    <div class="font"> 
+        <canvas id="font_chooser" width="512" height="64"></canvas>
+        <canvas id="color_chooser" width="128" height="32"></canvas>
+        <canvas id="bgcolor_chooser" width="128" height="32"></canvas>        
+    </div>
+    <div class="canvas">
+        <canvas id="canvas" width="640" height="480"></canvas>
+    </div>
+    <div class="code">
+        <button id="btn-get-output">Get dump</button>
+        <textarea id="output" rows="10" cols="80"></textarea>
+    </div>
+    <script>
+        var app = new App();
+        app.run();
+    </script>
+</body>
+</html>

@@ -287,7 +287,7 @@ begin
         end if;
     end process;
 
-    attr <= last_attr when bit_addr <= 2 else cur_attr;
+    attr <= last_attr when bit_addr <= 1 else cur_attr;
 
     -- getting font pixel of the current char line
     bit_addr <= char_x(2 downto 0);
@@ -319,56 +319,56 @@ begin
     --0x02 = CMD_SET_POS - X - Y (0...79, 0...29)
     --0x04 = CMD_CHAR - CHAR - ATTRS    
 
-    --process(reset, clk_spi, spi_do_valid, spi_do, addr_write, addr_clear, clear)
-    --begin
-    --    if (rising_edge(clk_spi)) then
-    --        if (reset = '1') then
-    --            addr_write <= (others => '0');
-    --            inc_address <= '0';
-    --            vram_wr <= '0';
-    --            clear <= '0';
-    --            addr_clear <= (others => '0');
-    --        elsif (spi_do_valid = '1' and clear = '0') then
-    --            case spi_do(23 downto 16) is 
-    --                when X"01"  => vram_wr <= '0'; clear <= '1'; addr_clear <= (others => '0');
-    --                when X"02"  => vram_wr <= '0'; addr_write <= spi_do(14 downto 8) & spi_do(4 downto 0); -- y: 0...29, x: 0...79
-    --                when X"04"  => vram_wr <= '1'; vram_di    <= spi_do(15 downto 0); inc_address <= '1'; -- char + attrs, inc address
-    --                --when X"08"  => vram_wr <= '0'; tone <= '1'; tone_note <= spi_do(15 downto 8); tone_len <= spi_do(7 downto 0);
-    --                when others => vram_wr <= '0';
-    --            end case;
-    --        elsif (spi_do_valid = '0' and clear = '0') then 
-    --            vram_wr <= '0';
-    --            -- do the address increment for next write
-    --            if (inc_address = '1') then
-    --                addr_write <= addr_write + 1;
-    --                -- new row jump
-    --                if (addr_write(4 downto 0) >= 80) then
-    --                    addr_write(4 downto 0) <= "00000";
-    --                    addr_write(11 downto 5) <= addr_write(11 downto 5) + 1;
-    --                end if;
-    --                inc_address <= '0';
-    --            end if;
-    --            -- tone play
-    --            if (tone = '1') then 
-    --                -- todo
-    --                -- tone_note;
-    --                -- tone_len;
-    --                tone <= '0';
-    --            end if;
-    --        elsif (clear = '1') then
-    --            vram_wr <= '1';
-    --            vram_di <= (others => '0');
-    --            addr_write <= addr_clear;
-    --            if (addr_clear < 2400) then 
-    --                addr_clear <= addr_clear + 1;
-    --            else 
-    --                clear <= '0';
-    --                addr_clear <= (others => '0');
-    --                addr_write <= (others => '0');
-    --            end if;
-    --        end if;
-    --    end if;
-    --end process;
+    process(reset, clk_spi, spi_do_valid, spi_do, addr_write, addr_clear, clear)
+    begin
+        if (rising_edge(clk_spi)) then
+            if (reset = '1') then
+                addr_write <= (others => '0');
+                inc_address <= '0';
+                vram_wr <= '0';
+                clear <= '0';
+                addr_clear <= (others => '0');
+            elsif (spi_do_valid = '1' and clear = '0') then
+                case spi_do(23 downto 16) is 
+                    when X"01"  => vram_wr <= '0'; clear <= '1'; addr_clear <= (others => '0');
+                    when X"02"  => vram_wr <= '0'; addr_write <= spi_do(14 downto 8) & spi_do(4 downto 0); -- y: 0...29, x: 0...79
+                    when X"04"  => vram_wr <= '1'; vram_di    <= spi_do(15 downto 0); inc_address <= '1'; -- char + attrs, inc address
+                    --when X"08"  => vram_wr <= '0'; tone <= '1'; tone_note <= spi_do(15 downto 8); tone_len <= spi_do(7 downto 0);
+                    when others => vram_wr <= '0';
+                end case;
+            elsif (spi_do_valid = '0' and clear = '0') then 
+                vram_wr <= '0';
+                -- do the address increment for next write
+                if (inc_address = '1') then
+                    addr_write <= addr_write + 1;
+                    -- new row jump
+                    if (addr_write(4 downto 0) >= 80) then
+                        addr_write(4 downto 0) <= "00000";
+                        addr_write(11 downto 5) <= addr_write(11 downto 5) + 1;
+                    end if;
+                    inc_address <= '0';
+                end if;
+                -- tone play
+                if (tone = '1') then 
+                    -- todo
+                    -- tone_note;
+                    -- tone_len;
+                    tone <= '0';
+                end if;
+            elsif (clear = '1') then
+                vram_wr <= '1';
+                vram_di <= (others => '0');
+                addr_write <= addr_clear;
+                if (addr_clear < 2400) then 
+                    addr_clear <= addr_clear + 1;
+                else 
+                    clear <= '0';
+                    addr_clear <= (others => '0');
+                    addr_write <= (others => '0');
+                end if;
+            end if;
+        end if;
+    end process;
 
     ETH_NCS <= '1'; -- disable Ethernet controller
     SD_NCS <= '1'; -- disable SD card
