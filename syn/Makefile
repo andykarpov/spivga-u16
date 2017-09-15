@@ -11,10 +11,10 @@ TOP_LEVEL_ENTITY = spivga_top
 # Part, Family, Boardfile revA or revC, Flash loader device, etc
 
 FAMILY = "Cyclone IV E"
-PART = EP4CE6E22C8
+PART = EP4CE22E22C8
 FLASH_CONFIG = EPCS16
-FLASH_LOADER = EP4CE6
-BOARDFILE = revA
+FLASH_LOADER = EP4CE22
+BOARDFILE = revC
 
 ###################################################################
 # Sources
