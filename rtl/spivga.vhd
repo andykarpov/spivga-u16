@@ -5,56 +5,28 @@ use ieee.numeric_std.all;
 
 entity spivga is
     port(
-        -- master clock 50.0 MHz
-        CLK_50MHZ   : in std_logic;
 
-        -- HDMI
-        TMDS        : out std_logic_vector(7 downto 0);
+        reset       : in std_logic;
 
-        -- USB Host (VNC2-32)
-        USB_NRESET  : in std_logic;
-        USB_TX      : in std_logic;
-        USB_IO1     : in std_logic;
+        clk_vga     : in std_logic;
+        clk_spi     : in std_logic;
 
-        -- SPI (W25Q64/SD)
-        DATA0       : in std_logic;
-        ASDO        : out std_logic;
-        DCLK        : out std_logic;
-        NCSO        : out std_logic;
+        vga_r       : out std_logic_vector(7 downto 0);
+        vga_g       : out std_logic_vector(7 downto 0);
+        vga_b       : out std_logic_vector(7 downto 0);
+        vga_hsync   : out std_logic;
+        vga_vsync   : out std_logic;
+        vga_blank   : out std_logic;
 
-        -- I2C (HDMI/RTC)
-        I2C_SCL     : inout std_logic;
-        I2C_SDA     : inout std_logic;
+        kb_key0     : in std_logic_vector(7 downto 0);
+        kb_key1     : in std_logic_vector(7 downto 0);
+        kb_key2     : in std_logic_vector(7 downto 0);
+        kb_fkeys    : in std_logic_vector(12 downto 1);
 
-        -- SD
-        SD_NDET     : in std_logic;
-        SD_NCS      : out std_logic;
-        SD_SO       : in std_logic;
-        SD_SI       : out std_logic;
-        SD_CLK      : out std_logic;
-
-        -- Ethernet (ENC424J600)
-        ETH_SO      : in std_logic;
-        ETH_NINT    : in std_logic;
-        ETH_NCS     : out std_logic;
-
-        -- SDRAM (32M16)
-        SDRAM_DQ    : inout std_logic_vector(15 downto 0);
-        SDRAM_A     : out std_logic_vector(12 downto 0);
-        SDRAM_BA    : out std_logic_vector(1 downto 0);
-        SDRAM_DQML  : out std_logic;
-        SDRAM_DQMH  : out std_logic;
-        SDRAM_CLK   : out std_logic;
-        SDRAM_NWE   : out std_logic;
-        SDRAM_NCAS  : out std_logic;
-        SDRAM_NRAS  : out std_logic;
-
-        -- Ext SPI
-        SPI_SCLK    : in std_logic;
-        SPI_NCS     : in std_logic;
-        SPI_SI      : in std_logic;
-        SPI_SO      : out std_logic
-
+        spi_sclk    : in std_logic;
+        spi_ncs     : in std_logic;
+        spi_si      : in std_logic;
+        spi_so      : out std_logic
     );
 end spivga;
 
@@ -79,14 +51,6 @@ architecture rtl of spivga is
         q         : out std_logic_vector(15 downto 0)
     );
     end component;
-
-    signal reset : std_logic;
-    signal areset : std_logic;
-    signal locked0 : std_logic;
-
-    signal clk_vga : std_logic;
-    signal clk_tmds : std_logic;
-    signal clk_spi : std_logic;
 
     signal video_on : std_logic;
     signal pixel_x: std_logic_vector(9 downto 0) := "0000000000";
@@ -114,18 +78,8 @@ architecture rtl of spivga is
     signal vsync: std_logic;
     signal pixel_tick: std_logic;
 
-    signal vga_r : std_logic_vector(7 downto 0);
-    signal vga_g : std_logic_vector(7 downto 0);
-    signal vga_b : std_logic_vector(7 downto 0);
-
     signal spi_do : std_logic_vector(23 downto 0);
     signal spi_do_valid : std_logic;
-
-    signal kb_key0 : std_logic_vector(7 downto 0);
-    signal kb_key1 : std_logic_vector(7 downto 0);
-    signal kb_key2 : std_logic_vector(7 downto 0);
-
-    signal kb_fkeys     : std_logic_vector(12 downto 1);
 
     signal inc_address : std_logic := '0';
 
@@ -148,17 +102,6 @@ architecture rtl of spivga is
     signal font_reg : std_logic_vector(7 downto 0);
 
 begin
-
-    U_PLL: entity work.altpll0
-        port map (
-            areset      => '0',
-            locked      => locked0,
-            inclk0      => CLK_50MHZ,   --  50.00 MHz
-            c0          => clk_vga,     --  25.20 MHz
-            c1          => clk_tmds,    -- 126.00 MHz
-            c2          => open,        --  28.00 MHz
-            c3          => open,        --  84.00 MHz
-            c4          => clk_spi);    --   8.00 MHz
 
     U_SYNC: entity work.vga_sync
         port map (
@@ -191,64 +134,16 @@ begin
         q         => vram_do
     );
 
-    U_HDMI: entity work.hdmi
-        generic map (
-            FREQ        => 25200000,
-            FS          => 48000,
-            CTS         => 25200,
-            N           => 6144)
-        port map (
-            I_CLK_VGA   => clk_vga,
-            I_CLK_TMDS  => clk_tmds,
-            I_HSYNC     => hsync,
-            I_VSYNC     => vsync,
-            I_BLANK     => blank,
-            I_RED       => vga_r,
-            I_GREEN     => vga_g,
-            I_BLUE      => vga_b,
-            I_AUDIO_PCM_L   => "0000000000000000",
-            I_AUDIO_PCM_R   => "0000000000000000",
-            O_TMDS      => TMDS);
-
-    U_HID: entity work.deserializer
-    generic map (
-        divisor         => 434)     -- divisor = 50MHz / 115200 Baud = 434
-    port map(
-        I_CLK           => CLK_50MHZ,
-        I_RESET         => areset,
-        I_RX            => USB_TX,
-        I_NEWFRAME      => USB_IO1,
-        I_ADDR          => "11111111",
-        O_MOUSE0_X      => open,
-        O_MOUSE0_Y      => open,
-        O_MOUSE0_Z      => open,
-        O_MOUSE0_BUTTONS    => open,
-        O_MOUSE1_X      => open,
-        O_MOUSE1_Y      => open,
-        O_MOUSE1_Z      => open,
-        O_MOUSE1_BUTTONS    => open,
-        O_KEY0          => kb_key0,--kb_key0,
-        O_KEY1          => kb_key1,--kb_key1,
-        O_KEY2          => kb_key2,--kb_key2,
-        O_KEY3          => open,--kb_key3,
-        O_KEY4          => open,--kb_key4,
-        O_KEY5          => open,--kb_key5,
-        O_KEY6          => open,--kb_key6,
-        O_KEYBOARD_SCAN     => open,
-        O_KEYBOARD_FKEYS    => kb_fkeys,
-        O_KEYBOARD_JOYKEYS  => open,
-        O_KEYBOARD_CTLKEYS  => open);
-
     U_SPI: entity work.spi_slave
     generic map(
         N              => 24        
     )
     port map(
         clk_i          => clk_spi,
-        spi_sck_i      => SPI_SCLK,
-        spi_ssel_i     => SPI_NCS,
-        spi_mosi_i     => SPI_SI,
-        spi_miso_o     => SPI_SO,
+        spi_sck_i      => spi_sclk,
+        spi_ssel_i     => spi_ncs,
+        spi_mosi_i     => spi_si,
+        spi_miso_o     => spi_so,
 
         di_req_o       => open,
         di_i           => kb_key0 & kb_key1 & kb_key2,
@@ -265,10 +160,8 @@ begin
 
     -----------------------------------------------------------------------------------------------
 
-    areset  <= not locked0; -- reset
-    reset   <= kb_fkeys(4) or areset;   -- hot reset
-
     video_on <= not blank;
+
     char_x <= pixel_x(2 downto 0);
     char_y <= pixel_y(3 downto 0);
 
@@ -291,15 +184,14 @@ begin
 
     -- getting font pixel of the current char line
     bit_addr <= char_x(2 downto 0);
-    font_bit <= font_reg(2) when bit_addr = "000" else 
-                font_reg(1) when bit_addr = "001" else 
-                font_reg(0) when bit_addr = "010" else 
-                font_reg(7) when bit_addr = "011" else 
-                font_reg(6) when bit_addr = "100" else 
-                font_reg(5) when bit_addr = "101" else 
-                font_reg(4) when bit_addr = "110" else 
-                font_reg(3) when bit_addr = "111";
-
+    font_bit <= font_reg(1) when bit_addr = "000" else 
+                font_reg(0) when bit_addr = "001" else 
+                font_reg(7) when bit_addr = "010" else 
+                font_reg(6) when bit_addr = "011" else 
+                font_reg(5) when bit_addr = "100" else 
+                font_reg(4) when bit_addr = "101" else 
+                font_reg(3) when bit_addr = "110" else 
+                font_reg(2) when bit_addr = "111";
 
     -- rgb multiplexing
     is_flash <= '1' when attr(3 downto 0) = "0001" else '0';
@@ -313,6 +205,9 @@ begin
     vga_r <= rgb(5 downto 4) & rgb(5 downto 4) & rgb(5 downto 4) & rgb(5 downto 4);
     vga_g <= rgb(3 downto 2) & rgb(3 downto 2) & rgb(3 downto 2) & rgb(3 downto 2);
     vga_b <= rgb(1 downto 0) & rgb(1 downto 0) & rgb(1 downto 0) & rgb(1 downto 0);
+    vga_hsync <= hsync;
+    vga_vsync <= vsync;
+    vga_blank <= blank;
 
     -- read spi commands and process incoming data
     --0x01 = CMD_CLEAR - 0 - 0
@@ -369,15 +264,5 @@ begin
             end if;
         end if;
     end process;
-
-    ETH_NCS <= '1'; -- disable Ethernet controller
-    SD_NCS <= '1'; -- disable SD card
-    NCSO <= '1'; -- disable spi flash
-    SDRAM_NWE <= '1'; -- disable sdram
-    SDRAM_NCAS <= '1';
-    SDRAM_NRAS <= '1';
-    SDRAM_CLK <= '0';
-    I2C_SCL <= 'Z'; -- disable i2c
-    I2C_SDA <= 'Z';
 
 end rtl;

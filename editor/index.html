@@ -1,22 +1,79 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head> 
-    <script src="font.js"></script>
-    <script src="classes.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>SPIVGA screen editor</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/editor.css">
+    <script src="js/jquery.js"></script>
+    <script src="js/popper.min.js"></script>
+    <script src="js/bootstrap.js"></script>
+    <script src="js/font.js"></script>
+    <script src="js/classes.js"></script>
 </head>
 <body>
-    <div class="font"> 
-        <canvas id="font_chooser" width="512" height="64"></canvas>
-        <canvas id="color_chooser" width="128" height="32"></canvas>
-        <canvas id="bgcolor_chooser" width="128" height="32"></canvas>        
+
+    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+      <a class="navbar-brand" href="#">SPIVGA Screen Editor</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+      </div>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+        </div>
+        <div class="row">
+            <div class="col-md-12"> 
+
+                <ul class="nav nav-tabs">
+                  <li class="nav-item">
+                    <a class="nav-link active" id="editor-tab" data-toggle="tab" href="#editor" role="tab" aria-controls="editor" aria-expanded="true">Editor</a>
+                  </li>
+                  <li class="nav-item">
+                    <a class="nav-link" id="dump-tab" data-toggle="tab" href="#dump" role="tab" aria-controls="dump" aria-expanded="true">Dump</a>
+                  </li>
+                </ul>
+
+                <div class="tab-content" id="myTabContent">
+                  <div class="tab-pane fade show active" id="editor" role="tabpanel" aria-labelledby="editor-tab">
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <canvas id="font_chooser" width="512" height="64"></canvas>
+                        </div>
+                        <div class="col-md-4">
+                            <canvas id="color_chooser" width="128" height="32"></canvas>
+                            <canvas id="bgcolor_chooser" width="128" height="32"></canvas>        
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <canvas id="canvas" width="640" height="480"></canvas>              
+                        </div>
+                    </div>  
+                  </div>
+                  <div class="tab-pane fade" id="dump" role="tabpanel" aria-labelledby="editor-tab">
+                    <button class="btn btn-default" id="btn-get-output">Get dump</button>
+                    <textarea id="output" rows="10" cols="40"></textarea>                
+                  </div>
+                </div>
+
+            </div>
+        </div>
     </div>
-    <div class="canvas">
-        <canvas id="canvas" width="640" height="480"></canvas>
-    </div>
-    <div class="code">
-        <button id="btn-get-output">Get dump</button>
-        <textarea id="output" rows="10" cols="80"></textarea>
-    </div>
+
+    <hr>
+
+    <footer>
+        <p>&copy; 2017 Andy Karpov</p>
+    </footer>
+
     <script>
         var app = new App();
         app.run();

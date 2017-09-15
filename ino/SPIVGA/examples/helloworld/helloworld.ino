@@ -1,3 +1,6 @@
+/**
+ * Example sketch to print Hello World on the SPIVGA display
+ */
 #include <Arduino.h>
 #include <SPIVGA.h>
 #include <SPI.h>
