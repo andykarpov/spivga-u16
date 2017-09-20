@@ -83,8 +83,8 @@ set_location_assignment PIN_33 -to ETH_NCS
 #=================SPI===========================                 
 set_location_assignment PIN_68 -to SPI_SCLK      # DN
 set_location_assignment PIN_69 -to SPI_VGA_NCS   # DP
-set_location_assignment PIN_90 -to SPI_SD_NCS    # CP
-set_location_assignment PIN_91 -to SPI_FLASH_NCS # CN
+set_location_assignment PIN_90 -to SPI_SD_NCS    # CN
+set_location_assignment PIN_91 -to SPI_FLASH_NCS # CP
 set_location_assignment PIN_88 -to SPI_SI        # BN
 set_location_assignment PIN_72 -to SPI_SO        # AN
 

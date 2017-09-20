@@ -18,7 +18,7 @@
 #
 # Quartus II 32-bit
 # Version 13.0.1 Build 232 06/12/2013 Service Pack 1 SJ Web Edition
-# Date created = 12:44:29  September 15, 2017
+# Date created = 17:47:58  September 16, 2017
 #
 # -------------------------------------------------------------------------- #
 #
@@ -40,7 +40,7 @@ set_global_assignment -name FAMILY "Cyclone IV E"
 set_global_assignment -name DEVICE EP4CE22E22C8
 set_global_assignment -name TOP_LEVEL_ENTITY spivga_top
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION "13.0 SP1"
-set_global_assignment -name PROJECT_CREATION_TIME_DATE "12:44:29  SEPTEMBER 15, 2017"
+set_global_assignment -name PROJECT_CREATION_TIME_DATE "17:47:58  SEPTEMBER 16, 2017"
 set_global_assignment -name LAST_QUARTUS_VERSION "13.0 SP1"
 #==================CLK===========================
 set_location_assignment PIN_25 -to CLK_50MHZ
@@ -126,8 +126,8 @@ set_location_assignment PIN_33 -to ETH_NCS
 #=================SPI===========================                 
 set_location_assignment PIN_68 -to SPI_SCLK      # DN
 set_location_assignment PIN_69 -to SPI_VGA_NCS   # DP
-set_location_assignment PIN_90 -to SPI_SD_NCS    # CP
-set_location_assignment PIN_91 -to SPI_FLASH_NCS # CN
+set_location_assignment PIN_90 -to SPI_SD_NCS    # CN
+set_location_assignment PIN_91 -to SPI_FLASH_NCS # CP
 set_location_assignment PIN_88 -to SPI_SI        # BN
 set_location_assignment PIN_72 -to SPI_SO        # AN
 
@@ -167,3 +167,7 @@ set_global_assignment -name SOURCE_FILE ../rtl/font/rom_font.v
 set_global_assignment -name SOURCE_FILE ../rtl/vga/vga_sync.vhd
 set_global_assignment -name SOURCE_FILE ../rtl/spivga.vhd
 set_global_assignment -name SOURCE_FILE ../rtl/spivga_top.vhd
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

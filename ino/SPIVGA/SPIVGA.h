@@ -22,6 +22,7 @@
 // Project headers
 #include "keyboard_report.h"
 #include <avr/pgmspace.h>
+#include <digitalWriteFast.h>
 
 /****************************************************************************/
 
@@ -36,18 +37,20 @@ private:
   uint8_t cs_pin;
   uint8_t fg_color;
   uint8_t bg_color;
+  uint8_t current_x=0;
+  uint8_t current_y=0;
   KeyboardReport report;
 
 protected:
 
   inline void control_mode_on(void) const
   {
-    digitalWrite(cs_pin,LOW);
+    digitalWriteFast(cs_pin, LOW);
   }
 
   inline void control_mode_off(void) const
   {
-    digitalWrite(cs_pin,HIGH);
+    digitalWriteFast(cs_pin, HIGH);
   }
 
   void setReport(KeyboardReport _report);
@@ -55,6 +58,24 @@ protected:
   void write_command(uint8_t _cmd, uint8_t _value1, uint8_t _value2);
 
 public:
+
+  const uint8_t COLOR_BLACK = B0000;
+  const uint8_t COLOR_FLASH = B0001;
+  const uint8_t COLOR_WHITE = B1111;
+  const uint8_t COLOR_GREY  = B1110;
+  const uint8_t COLOR_RED   = B1000;
+  const uint8_t COLOR_GREEN = B0100;
+  const uint8_t COLOR_BLUE  = B0010;
+  const uint8_t COLOR_RED_I   = B1001;
+  const uint8_t COLOR_GREEN_I = B0101;
+  const uint8_t COLOR_BLUE_I  = B0011;
+  const uint8_t COLOR_YELLOW = B1100;
+  const uint8_t COLOR_YELLOW_I = B1101;
+  const uint8_t COLOR_MAGENTA = B1010;
+  const uint8_t COLOR_MAGENTA_I = B1011;
+  const uint8_t COLOR_CYAN = B0110;
+  const uint8_t COLOR_CYAN_I = B0111;
+
   /**
    * Constructor
    *
@@ -117,20 +138,9 @@ public:
    */
   virtual size_t write(uint8_t chr);
 
-  /**
-   * Write a string
-   *
-   * @param *str string.
-   */
-  virtual size_t write(const char *str);
-
-  /**
-   * Write a buffer of the given size
-   *
-   * @param *buffer
-   * @param size
-   */
-  virtual size_t write(const uint8_t *buffer, size_t size);
+  void fill(uint8_t chr);
+  void fill(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t chr);
+  void frame(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t thickness);
 
 };
 

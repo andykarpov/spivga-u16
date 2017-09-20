@@ -50,10 +50,10 @@ entity spivga_top is
         SDRAM_NRAS  : out std_logic;
 
         -- Ext SPI
-        SPI_SCLK      : in std_logic;
-        SPI_VGA_NCS   : in std_logic;
-        SPI_SD_NCS    : in std_logic;
-        SPI_FLASH_NCS : in std_logic;
+        SPI_SCLK      : in std_logic := '0';
+        SPI_VGA_NCS   : in std_logic := '1';
+        SPI_SD_NCS    : in std_logic := '1';
+        SPI_FLASH_NCS : in std_logic := '1';
         SPI_SI        : in std_logic;
         SPI_SO        : out std_logic
 
@@ -149,7 +149,7 @@ begin
     port map(
             reset       => reset,
             clk_vga     => clk_vga,
-            clk_spi     => clk_spi,
+            clk_spi     => clk_tmds,
 
             vga_r       => vga_r,
             vga_g       => vga_g,
