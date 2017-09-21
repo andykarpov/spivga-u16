@@ -6,8 +6,7 @@ Tech specs:
 - Color depth: 16 colors
 - Font size: 8x16
 - Characters area: 80x30 characters
-- Communication: over SPI at 8MHz clock (~400kHz)
+- Communication: SPI (slave, SPI mode 0)
 - Ouput: HDMI
 - Input: usb keyboard
 - SPIVGA library for Arduino with example usage
-
